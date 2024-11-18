@@ -1,8 +1,11 @@
-# Stage 1: Build the application
-FROM golang:1.21-alpine
+# Use an official Go image
+FROM golang:1.23-alpine
 
 # Set working directory
 WORKDIR /app
+
+# Install Air for live reloading
+RUN go install github.com/air-verse/air@latest
 
 # Copy go.mod and go.sum for dependency resolution
 COPY go.* ./
@@ -13,11 +16,8 @@ RUN go mod download
 # Copy the application source code
 COPY . .
 
-# Build the application
-RUN go build -o main .
-
 # Expose the application port
 EXPOSE 8080
 
-# Run the application
-CMD ["./main"]
+# Use Air to run the application
+CMD ["air", "-c", ".air.toml"]

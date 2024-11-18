@@ -1,0 +1,10 @@
+[build]
+    cmd = "go build -o main main.go"
+    bin = "main"
+    dir = "."
+    include_ext = ["go"]
+    exclude_dir = ["vendor", ".git"]
+    poll = true # Enable polling for mounted volumes in Docker
+
+[log]
+    level = "debug"
