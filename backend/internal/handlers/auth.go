@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"mango/internal/database"
 	"net/http"
@@ -22,17 +26,12 @@ type User struct {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	// create credintials format
-	var creds struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
 
-	// decode the response
-	json.NewDecoder(r.Body).Decode(&creds)
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
 	// validate the user
-	if !database.ValidateUser(creds.Username, creds.Password) {
+	if !database.ValidateUser(username, password) {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
@@ -40,7 +39,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// create a jwt claim that will expire in a day
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := Claims{
-		Username: creds.Username,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
@@ -79,6 +78,43 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out"})
 }
 
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+
+	// max 10 mb
+	r.ParseMultipartForm(10 << 20)
+
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	email := r.FormValue("email")
+
+	// gets image
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, "Error retrieving file"+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		http.Error(w, "Failed to Hash Image: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	imageHash := hex.EncodeToString(hasher.Sum(nil))
+
+	// verify registration image
+	if !database.ValidateImageHash(imageHash) {
+		http.Error(w, "Invalid registration image", http.StatusUnauthorized)
+		return
+	}
+
+	// if it works
+	database.RegisterUser(username, email, password)
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Sign up successful"})
+}
+
 func AuthCheck(w http.ResponseWriter, r *http.Request) {
 	log.Println("Verifying user")
 
@@ -93,13 +129,15 @@ func AuthCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("cookie: ", cookie)
+
 	tokenString := cookie.Value
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
-	if err != nil || token.Valid {
+	if err != nil || !token.Valid {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -107,4 +145,36 @@ func AuthCheck(w http.ResponseWriter, r *http.Request) {
 	user := User{Username: claims.Username}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
+}
+
+// return username and profile picture (TODO)
+func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Extract the token string
+	tokenString := cookie.Value
+
+	// Initialize claims struct
+	claims := &Claims{}
+
+	// Parse and validate the token
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// At this point, claims.Username contains the current user's username
+	username := claims.Username
+
+	// Return the user profile as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"username": username})
 }

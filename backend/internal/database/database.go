@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	// "github.com/mattn/go-sqlite3"
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -78,6 +76,18 @@ func ValidatePassword(hashedPassword, password string) bool {
 	return err == nil
 }
 
+func ValidateImageHash(imageHash string) bool {
+	var storedHash string
+
+	err := db.QueryRow("SELECT hash FROM registration").Scan(&storedHash)
+	if err != nil {
+		log.Print("Error storing hash", err)
+		return false
+	}
+
+	return imageHash == storedHash
+}
+
 func ValidateUser(username, password string) bool {
 	var hashedPassword string
 	err := db.QueryRow("SELECT password FROM users WHERE username=?", username).Scan(&hashedPassword)
@@ -103,4 +113,65 @@ func RegisterUser(username, email, password string) error {
 
 	log.Println("User created successfully")
 	return nil
+}
+
+func ExecDisplayQuery(query string, args ...interface{}) []map[string]interface{} {
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		log.Printf("Query error: %v", err)
+		return nil
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		log.Printf("Error getting columns: %v", err)
+		return nil
+	}
+
+	var results []map[string]interface{}
+
+	// For each row
+	for rows.Next() {
+		// Create a slice of interface{} to hold the values
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+
+		// Set up pointers to each interface{} value
+		for i := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			log.Printf("Scan error: %v", err)
+			continue
+		}
+
+		// Create a map for this row
+		entry := make(map[string]interface{})
+
+		for i, col := range columns {
+			val := values[i]
+
+			// Handle nil values
+			if val == nil {
+				entry[col] = nil
+				continue
+			}
+
+			// Handle different data types from database
+			switch v := val.(type) {
+			case []byte:
+				// Convert []byte to string for text/varchar fields
+				entry[col] = string(v)
+			default:
+				// For all other types, use as is
+				entry[col] = v
+			}
+		}
+
+		results = append(results, entry)
+	}
+
+	return results
 }
