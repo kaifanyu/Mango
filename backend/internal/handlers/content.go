@@ -9,13 +9,11 @@ import (
 
 var limit int = 20
 
-
 type Anime struct {
 	ID         int    `json:"id"`
 	Title      string `json:"title"`
 	CoverImage string `json:"cover_image"`
-	Author     string `json:"author"`
-	Duration   int    `json:"duration"`
+	Episodes   int    `json:"episodes"`
 }
 
 type Audiobook struct {
@@ -26,9 +24,82 @@ type Audiobook struct {
 	Duration   int    `json:"duration"`
 }
 
+type Manga struct {
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
+	CoverImage string `json:"cover_image"`
+	Author     string `json:"author"`
+	Chapters   int    `json:"Chapters"`
+}
 
+type Movie struct {
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
+	CoverImage string `json:"cover_image"`
+	Duration   int    `json:"duration"`
+}
 
-func AnimeHandler(w http.ResponseWriter, r*http.Request) {
+func MangaHandler(w http.ResponseWriter, r *http.Request) {
+	query := `
+        SELECT c.id, c.title, a.author, a.chapters
+        FROM content c
+        JOIN mangas a ON c.id = a.content_id
+        WHERE c.content_type = 'manga'
+        ORDER BY c.id DESC
+        LIMIT ?
+    `
+	mangas := database.ExecDisplayQuery(query, limit)
+
+	results := make([]Manga, 0)
+
+	for _, manga := range mangas {
+		id := getIntValue(manga["id"])
+		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/mangas/%d.jpg", id)
+
+		results = append(results, Manga{
+			ID:         id,
+			Title:      getStringValue(manga["title"]),
+			CoverImage: coverImage,
+			Author:     getStringValue(manga["author"]),
+			Chapters:   getIntValue(manga["duration"]),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
+func MovieHandler(w http.ResponseWriter, r *http.Request) {
+	query := `
+		SELECT c.id, c.title, a.duration
+		FROM content c
+		JOIN movies a ON c.id = a.content_id
+		WHERE c.content_type = 'movies'
+		ORDER BY c.id DESC
+		LIMIT ?
+	`
+
+	movies := database.ExecDisplayQuery(query, limit)
+
+	results := make([]Movie, 0)
+
+	for _, movie := range movies {
+		id := getIntValue(movie["id"])
+		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/movies/%d.jpg", id)
+
+		results = append(results, Movie{
+			ID:         id,
+			Title:      getStringValue(movie["title"]),
+			CoverImage: coverImage,
+			Duration:   getIntValue(movie["duration"]),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(results)
+}
+
+func AnimeHandler(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT c.id, c.title, a.episodes
 		FROM content c
@@ -37,22 +108,20 @@ func AnimeHandler(w http.ResponseWriter, r*http.Request) {
 		ORDER BY c.id DESC
 		LIMIT ?
 	`
-	
-	audiobooks := database.ExecDisplayQuery(query, limit)
 
+	animes := database.ExecDisplayQuery(query, limit)
 
-	results := make([]Audiobook, 0)
+	results := make([]Anime, 0)
 
-	for _, book := range audiobooks {
-		id := getIntValue(book["id"])
-		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/audiobooks/%d.jpg", id)
+	for _, anime := range animes {
+		id := getIntValue(anime["id"])
+		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/anime/%d.jpg", id)
 
-		results = append(results, Audiobook{
+		results = append(results, Anime{
 			ID:         id,
-			Title:      getStringValue(book["title"]),
+			Title:      getStringValue(anime["title"]),
 			CoverImage: coverImage,
-			Author:     getStringValue(book["author"]),
-			Duration:   getIntValue(book["duration"]),
+			Episodes:   getIntValue(anime["episodes"]),
 		})
 	}
 
@@ -71,7 +140,6 @@ func AudioBookHandler(w http.ResponseWriter, r *http.Request) {
         LIMIT ?
     `
 	audiobooks := database.ExecDisplayQuery(query, limit)
-
 
 	results := make([]Audiobook, 0)
 
