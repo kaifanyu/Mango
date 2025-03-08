@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"mango/internal/database"
 	"net/http"
 	"strconv"
+
+	"mango/internal/config"
+	"mango/internal/database"
 
 	"github.com/gorilla/mux"
 )
@@ -57,7 +59,7 @@ func MangaHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, manga := range mangas {
 		id := getIntValue(manga["id"])
-		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/mangas/%d.jpg", id)
+		coverImage := fmt.Sprintf("%s/static/content/covers/mangas/%d.jpg", config.BaseURL, id)
 
 		results = append(results, Manga{
 			ID:         id,
@@ -88,7 +90,7 @@ func MovieHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, movie := range movies {
 		id := getIntValue(movie["id"])
-		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/movies/%d.jpg", id)
+		coverImage := fmt.Sprintf("%s/static/content/covers/movies/%d.jpg", config.BaseURL, id)
 
 		results = append(results, Movie{
 			ID:         id,
@@ -118,7 +120,7 @@ func AnimeHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, anime := range animes {
 		id := getIntValue(anime["id"])
-		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/anime/%d.jpg", id)
+		coverImage := fmt.Sprintf("%s/static/content/covers/anime/%d.jpg", config.BaseURL, id)
 
 		results = append(results, Anime{
 			ID:         id,
@@ -148,7 +150,7 @@ func AudioBookHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, book := range audiobooks {
 		id := getIntValue(book["id"])
-		coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/audiobooks/%d.jpg", id)
+		coverImage := fmt.Sprintf("%s/static/content/covers/audiobooks/%d.jpg", config.BaseURL, id)
 
 		results = append(results, Audiobook{
 			ID:         id,
@@ -188,7 +190,7 @@ func AudiobookDetailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	book := results[0]
-	coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/audiobooks/%s.jpg", audiobookID)
+	coverImage := fmt.Sprintf("%s/static/content/covers/audiobooks/%s.jpg", config.BaseURL, audiobookID)
 
 	detail := Audiobook{
 		ID:         getIntValue(audiobookID),
@@ -196,7 +198,6 @@ func AudiobookDetailHandler(w http.ResponseWriter, r *http.Request) {
 		CoverImage: coverImage,
 		Author:     getStringValue(book["author"]),
 		Duration:   getIntValue(book["duration"]),
-
 	}
 
 	w.Header().Set("Content-Type", "application/json")

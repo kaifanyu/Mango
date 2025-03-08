@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { page } from '$app/stores';
+	import { apiBaseUrl } from '$lib/stores/config';
     
     // Get audiobook ID from URL params
     const audiobookId = $page.params.id;
@@ -155,7 +156,7 @@
         isSavingProgress = true;
         logDebug(`Saving progress at ${progress} seconds`);
         
-        const response = await fetch('http://localhost:8080/api/progress', {
+        const response = await fetch(`${$apiBaseUrl}/api/progress`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -191,7 +192,7 @@
         
         // Fetch audiobook details
         logDebug(`Fetching audiobook data for ID: ${audiobookId}`);
-        const audiobookResponse = await fetch(`http://localhost:8080/api/content/audiobooks/${audiobookId}`);
+        const audiobookResponse = await fetch(`${$apiBaseUrl}/api/content/audiobooks/${audiobookId}`);
         
         if (!audiobookResponse.ok) {
           const errorText = await audiobookResponse.text();
@@ -204,7 +205,7 @@
         
         // Fetch user progress
         logDebug("Fetching user progress");
-        const progressResponse = await fetch(`http://localhost:8080/api/progress/${audiobookId}`, {
+        const progressResponse = await fetch(`${$apiBaseUrl}/api/progress/${audiobookId}`, {
           credentials: 'include',
         });
         
@@ -264,7 +265,7 @@
       // Small timeout to ensure browser has time to reset state
       setTimeout(() => {
         logDebug("Setting source after reset");
-        audioElement!.src = `http://localhost:8080/static/content/audiobooks/${audiobookId}.${fileExtension}`;
+        audioElement!.src = `${$apiBaseUrl}/static/content/audiobooks/${audiobookId}.${fileExtension}`;
         audioElement!.load();
       }, 100);
     }
@@ -458,7 +459,7 @@
       for (const format of formats) {
         try {
           logDebug("Checking audio file size with HEAD request");
-          const response = await fetch(`http://localhost:8080/static/content/audiobooks/${audiobookId}.${format}`, {
+          const response = await fetch(`${$apiBaseUrl}/static/content/audiobooks/${audiobookId}.${format}`, {
             method: 'HEAD'
           });
           
@@ -597,7 +598,7 @@
             <!-- Actual audio element (hidden) -->
             <audio 
               id="audio-player" 
-              src={`http://localhost:8080/static/content/audiobooks/${audiobookId}.${fileExtension}`}
+              src={`${$apiBaseUrl}/static/content/audiobooks/${audiobookId}.${fileExtension}`}
               preload="metadata"
             ></audio>
             

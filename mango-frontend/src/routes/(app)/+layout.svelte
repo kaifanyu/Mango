@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import {apiBaseUrl} from '$lib/stores/config'
   import "../../app.css"
   // User profile state
   let username = "";
@@ -20,7 +21,7 @@
   onMount(async () => {
     try {
 
-      const res = await fetch('http://localhost:8080/user/profile', {
+      const res = await fetch(`${$apiBaseUrl}/user/profile`, {
         credentials: 'include'
       });
       
@@ -70,7 +71,7 @@
               placeholder="Search titles..." 
               class="bg-gray-800 rounded-full py-1 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-red-600 w-40 md:w-64"
             />
-            <button type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <button aria-label='search' type="submit" class="absolute right-3 top-1/2 transform -translate-y-1/2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -97,7 +98,7 @@
                 <button 
                   class="block w-full text-left px-4 py-2 hover:bg-gray-800" 
                   on:click={async () => {
-                    await fetch('http://localhost:8080/logout', {
+                    await fetch(`${$apiBaseUrl}/logout`, {
                       method: 'POST',
                       credentials: 'include'
                     });

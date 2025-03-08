@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import "../app.css"
+  
   let isLogin = true; // Toggle between login and signup
   let message = "";
   let username = "";
@@ -69,7 +70,7 @@
     const endpoint = isLogin ? "login" : "signup";
     
     try {
-      const res = await fetch(`http://localhost:8080/${endpoint}`, {
+      const res = await fetch(`https://api.thejoyestboy.com/${endpoint}`, {
         method: "POST",
         body: formData,
         credentials: "include" // Store session cookies

@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mango/internal/database"
 	"net/http"
 	"time"
+
+	"mango/internal/database"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -56,12 +57,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// set auth_token to login
 	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    tokenString,
-		Expires:  expirationTime,
-		HttpOnly: true,
-		Secure:   false, //change to true in prod
-		Path:     "/",
+		Name:        "auth_token",
+		Value:       tokenString,
+		Expires:     expirationTime,
+		HttpOnly:    true,
+		Secure:      true, //change to true in prod
+		Path:        "/",
+		Domain:      ".thejoyestboy.com",
+		SameSite:    http.SameSiteDefaultMode,
+		Partitioned: true,
 	})
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Login successful"})
@@ -69,12 +73,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
+		Name:        "auth_token",
+		Value:       "",
+		Expires:     time.Now().Add(-1 * time.Hour),
+		HttpOnly:    true,
+		Secure:      true,
+		Path:        "/",
+		Domain:      ".thejoyestboy.com",
+		SameSite:    http.SameSiteDefaultMode,
+		Partitioned: true,
 	})
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out"})
 }
@@ -172,8 +179,6 @@ func GetUserNameHandler(r *http.Request) (string, error) {
 
 	return claims.Username, nil
 }
-
-
 
 // return username and profile picture (TODO)
 func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {

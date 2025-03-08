@@ -1,8 +1,9 @@
 package routes
 
 import (
-	"mango/internal/handlers"
 	"net/http"
+
+	"mango/internal/handlers"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -34,7 +35,7 @@ func SetUpRoutes() http.Handler {
 
 	// Create a CORS handler with your settings
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"http://localhost:5173", "https://www.thejoyestboy.com"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Range"},
 		ExposedHeaders:   []string{"Content-Length", "Content-Range", "Accept-Ranges"},
@@ -48,7 +49,7 @@ func SetUpRoutes() http.Handler {
 	// Create a CORS-enabled file server handler
 	corsStaticHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Add CORS headers for static files
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin")) // Dynamic origin handling
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Range, Content-Type, Authorization")
 		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges")
