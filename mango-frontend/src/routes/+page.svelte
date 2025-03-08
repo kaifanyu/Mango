@@ -67,7 +67,6 @@
     } 
    
     const endpoint = isLogin ? "login" : "signup";
-    console.log("formdata: ", formData)
     
     try {
       const res = await fetch(`http://localhost:8080/${endpoint}`, {

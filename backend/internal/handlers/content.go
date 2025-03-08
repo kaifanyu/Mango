@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"mango/internal/database"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 var limit int = 20
@@ -158,6 +161,46 @@ func AudioBookHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
+}
+
+func AudiobookDetailHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r) //gets audibook id
+	audiobookID := vars["id"]
+
+	id, err := strconv.Atoi(audiobookID)
+	if err != nil {
+		http.Error(w, "Invalid audibook ID", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+		SELECT c.id, c.title, a.author, a.duration
+		FROM content c
+		JOIN audiobooks a ON c.id = a.content_id
+		WHERE c.id = ? and c.content_type = 'audiobooks'
+	`
+
+	results := database.ExecDisplayQuery(query, id)
+
+	if len(results) == 0 {
+		http.Error(w, "Audiobook not found", http.StatusNotFound)
+		return
+	}
+
+	book := results[0]
+	coverImage := fmt.Sprintf("http://localhost:8080/static/content/covers/audiobooks/%s.jpg", audiobookID)
+
+	detail := Audiobook{
+		ID:         getIntValue(audiobookID),
+		Title:      getStringValue(book["title"]),
+		CoverImage: coverImage,
+		Author:     getStringValue(book["author"]),
+		Duration:   getIntValue(book["duration"]),
+
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(detail)
 }
 
 // Helper functions for type assertions

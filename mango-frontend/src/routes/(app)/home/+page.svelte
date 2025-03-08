@@ -36,24 +36,23 @@
         
         // Fetch data for each content type
         const [mangaRes, audiobooksRes, animeRes, moviesRes] = await Promise.all([
-          fetch('http://localhost:8080/api/content/manga'),
+          fetch('http://localhost:8080/api/content/mangas'),
           fetch('http://localhost:8080/api/content/audiobooks'),
           fetch('http://localhost:8080/api/content/anime'),
           fetch('http://localhost:8080/api/content/movies')
         ]);
         
         // Process responses
-        if (mangaRes.ok) manga = await mangaRes.json();
-        if (audiobooksRes.ok) audiobooks = await audiobooksRes.json();
         if (animeRes.ok) anime = await animeRes.json();
+        if (audiobooksRes.ok) audiobooks = await audiobooksRes.json();
+        if (mangaRes.ok) manga = await mangaRes.json();
         if (moviesRes.ok) movies = await moviesRes.json();
         
         // Set a random featured content from all items
-        const allContent = [...manga, ...audiobooks, ...anime, ...movies];
+        const allContent = [...anime, ...audiobooks,  ...manga, ...movies];
         if (allContent.length > 0) {
           featuredContent = allContent[Math.floor(Math.random() * allContent.length)];
         }
-        console.log("THIS: ", featuredContent?.cover_image)
       } catch (err) {
         console.error("Error fetching content:", err);
         error = "Failed to load content. Please try again later.";
@@ -75,7 +74,7 @@
         />
         <div class="absolute bottom-0 left-0 p-6 md:p-12 z-20 max-w-xl">
           <h1 class="text-3xl md:text-5xl font-bold mb-3">{featuredContent.title}</h1>
-          <p class="text-sm md:text-base mb-4 text-gray-300">{featuredContent.description || 'No description available'}</p>
+          <!-- <p class="text-sm md:text-base mb-4 text-gray-300">{featuredContent.description || 'No description available'}</p> -->
           <div class="flex space-x-3">
             <a 
               href={`/${featuredContent.type}/${featuredContent.id}`} 

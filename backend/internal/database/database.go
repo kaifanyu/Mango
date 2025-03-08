@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var db *sql.DB
+var DB *sql.DB
 
 func ConnectDB() {
 	var err error
@@ -21,12 +21,12 @@ func ConnectDB() {
 		DBName: "mango",
 	}
 
-	db, err = sql.Open("mysql", cfg.FormatDSN())
+	DB, err = sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		log.Fatal("Failed to connect to database")
 	}
 
-	pingErr := db.Ping()
+	pingErr := DB.Ping()
 	if pingErr != nil {
 		log.Fatal(pingErr)
 	}
@@ -55,12 +55,12 @@ func createTables() {
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);`
 
-	_, err := db.Exec(userTable)
+	_, err := DB.Exec(userTable)
 	if err != nil {
 		log.Fatalf("Failed to create users table: %v", err)
 	}
 
-	_, err = db.Exec(progressTable)
+	_, err = DB.Exec(progressTable)
 	if err != nil {
 		log.Fatalf("Failed to create user_progress table: %v", err)
 	}
@@ -79,7 +79,7 @@ func ValidatePassword(hashedPassword, password string) bool {
 func ValidateImageHash(imageHash string) bool {
 	var storedHash string
 
-	err := db.QueryRow("SELECT hash FROM registration").Scan(&storedHash)
+	err := DB.QueryRow("SELECT hash FROM registration").Scan(&storedHash)
 	if err != nil {
 		log.Print("Error storing hash", err)
 		return false
@@ -90,7 +90,7 @@ func ValidateImageHash(imageHash string) bool {
 
 func ValidateUser(username, password string) bool {
 	var hashedPassword string
-	err := db.QueryRow("SELECT password FROM users WHERE username=?", username).Scan(&hashedPassword)
+	err := DB.QueryRow("SELECT password FROM users WHERE username=?", username).Scan(&hashedPassword)
 	if err != nil {
 		return false
 	}
@@ -106,7 +106,7 @@ func RegisterUser(username, email, password string) error {
 
 	//insert the hashed password into the database
 	query := `INSERT into users (username, email, password) VALUES (?, ?, ?)`
-	_, err = db.Exec(query, username, email, hashedPassword)
+	_, err = DB.Exec(query, username, email, hashedPassword)
 	if err != nil {
 		log.Fatal("Failed to insert user into database")
 	}
@@ -116,7 +116,7 @@ func RegisterUser(username, email, password string) error {
 }
 
 func ExecDisplayQuery(query string, args ...interface{}) []map[string]interface{} {
-	rows, err := db.Query(query, args...)
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		log.Printf("Query error: %v", err)
 		return nil
@@ -174,4 +174,11 @@ func ExecDisplayQuery(query string, args ...interface{}) []map[string]interface{
 	}
 
 	return results
+}
+
+func GetUserID(username string) (int, error) {
+	var userID int
+	query := ` SELECT id FROM users WHERE username = ?`
+	err := DB.QueryRow(query, username).Scan(&userID)
+	return userID, err
 }

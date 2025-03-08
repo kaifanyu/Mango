@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -147,12 +148,11 @@ func AuthCheck(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// return username and profile picture (TODO)
-func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+func GetUserNameHandler(r *http.Request) (string, error) {
+
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+		return "", errors.New("Invalid Cookie")
 	}
 
 	// Extract the token string
@@ -167,14 +167,22 @@ func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil || !token.Valid {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+		return "", errors.New("Unauthorized token")
 	}
 
-	// At this point, claims.Username contains the current user's username
-	username := claims.Username
+	return claims.Username, nil
+}
 
-	// Return the user profile as JSON
+
+
+// return username and profile picture (TODO)
+func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	username, err := GetUserNameHandler(r)
+	if err != nil {
+		http.Error(w, "Failed to retrieve username", http.StatusInternalServerError)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"username": username})
+
 }
