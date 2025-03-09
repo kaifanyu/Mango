@@ -14,7 +14,7 @@ var DB *sql.DB
 func ConnectDB() {
 	var err error
 	cfg := mysql.Config{
-		User:   "root",
+		User:   "para",
 		Passwd: "para",
 		Net:    "tcp",
 		Addr:   "127.0.0.1:3306",
@@ -115,7 +115,7 @@ func createTables() {
 	_, err = DB.Exec(mangasTable)
 	_, err = DB.Exec(userTable)
 	_, err = DB.Exec(progressTable)
-	
+
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
