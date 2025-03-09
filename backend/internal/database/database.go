@@ -18,7 +18,7 @@ func ConnectDB() {
 		Passwd: "para",
 		Net:    "tcp",
 		Addr:   "127.0.0.1:3306",
-		DBName: "mango",
+		DBName: "joyboy",
 	}
 
 	DB, err = sql.Open("mysql", cfg.FormatDSN())
@@ -55,14 +55,69 @@ func createTables() {
 		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 	);`
 
-	_, err := DB.Exec(userTable)
-	if err != nil {
-		log.Fatalf("Failed to create users table: %v", err)
-	}
+	registrationTable := `
+	CREATE TABLE IF NOT EXISTS registration (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		hash VARCHAR(64) NOT NULL
+	);`
 
+	contentTable := `
+	CREATE TABLE IF NOT EXISTS content (
+		id INT(6) UNSIGNED ZEROFILL NOT NULL PRIMARY KEY,
+		content_type ENUM('manga','anime','movies','audiobooks') NOT NULL,
+		title VARCHAR(255) NOT NULL,
+		INDEX (content_type),
+		INDEX (title)
+	);`
+
+	contentIdsTable := `
+	CREATE TABLE IF NOT EXISTS content_ids (
+		content_type VARCHAR(20) NOT NULL PRIMARY KEY,
+		last_id INT NOT NULL DEFAULT 0
+	);`
+
+	audiobooksTable := `
+	CREATE TABLE IF NOT EXISTS audiobooks (
+		content_id INT(6) UNSIGNED ZEROFILL NOT NULL PRIMARY KEY,
+		author VARCHAR(255),
+		duration INT NOT NULL,
+		FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE
+	);`
+
+	animeTable := `
+	CREATE TABLE IF NOT EXISTS anime (
+		content_id INT(6) UNSIGNED ZEROFILL NOT NULL PRIMARY KEY,
+		episodes INT NOT NULL,
+		FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE
+	);`
+
+	moviesTable := `
+	CREATE TABLE IF NOT EXISTS movies (
+		content_id INT(6) UNSIGNED ZEROFILL NOT NULL PRIMARY KEY,
+		duration INT NOT NULL,
+		FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE
+	);`
+
+	mangasTable := `
+	CREATE TABLE IF NOT EXISTS mangas (
+		content_id INT(6) UNSIGNED ZEROFILL NOT NULL PRIMARY KEY,
+		author VARCHAR(255),
+		chapters INT NOT NULL,
+		FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE
+	);`
+
+	_, err := DB.Exec(registrationTable)
+	_, err = DB.Exec(contentTable)
+	_, err = DB.Exec(contentIdsTable)
+	_, err = DB.Exec(audiobooksTable)
+	_, err = DB.Exec(animeTable)
+	_, err = DB.Exec(moviesTable)
+	_, err = DB.Exec(mangasTable)
+	_, err = DB.Exec(userTable)
 	_, err = DB.Exec(progressTable)
+	
 	if err != nil {
-		log.Fatalf("Failed to create user_progress table: %v", err)
+		log.Fatalf("Failed to create table: %v", err)
 	}
 }
 
