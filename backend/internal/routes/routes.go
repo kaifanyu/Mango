@@ -43,7 +43,7 @@ func SetUpRoutes() http.Handler {
 	})
 
 	// Static files with CORS handling
-	staticDir := "../static"
+	staticDir := "/media/para/APTX/static/"
 	fs := http.FileServer(http.Dir(staticDir))
 
 	// Create a CORS-enabled file server handler
